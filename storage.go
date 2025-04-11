@@ -36,7 +36,11 @@ type CaddyStorageValkey struct {
 	locks  sync.Map
 }
 
-func NewCaddyStorageValkey(clientOptions valkey.ClientOption) (*CaddyStorageValkey, error) {
+type CaddyStorageValkeyOptions struct {
+	LockMajority int
+}
+
+func NewCaddyStorageValkey(clientOptions valkey.ClientOption, options CaddyStorageValkeyOptions) (*CaddyStorageValkey, error) {
 	// Create a new client for valkey
 	valkeyClient, err := valkey.NewClient(clientOptions)
 	if err != nil {
@@ -49,7 +53,8 @@ func NewCaddyStorageValkey(clientOptions valkey.ClientOption) (*CaddyStorageValk
 		ClientOption:   clientOptions,
 		KeyPrefix:      LOCKER_PREFIX,
 		NoLoopTracking: true,
-		KeyMajority:    1})
+		KeyMajority:    int32(options.LockMajority),
+	})
 
 	if err != nil {
 		// Cleanup unused client

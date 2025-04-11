@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/caddyserver/caddy/v2 v2.9.0
 	github.com/caddyserver/certmagic v0.22.2
-	github.com/valkey-io/valkey-go v1.0.56
+	github.com/valkey-io/valkey-go v1.0.57
 )
 
 require (

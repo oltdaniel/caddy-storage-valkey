@@ -5,42 +5,20 @@ services:
     image: docker.io/valkey/valkey:8.0-alpine
     ports:
       - "6379:6379"
-  valkeylock:
+  replica:
     image: docker.io/valkey/valkey:8.0-alpine
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        valkey-server --save "" --appendonly no --port 6376 &
+        echo "replica-read-only yes" > replica.conf
+        echo "replicaof valkey 6379" >> replica.conf
+        valkey-server replica.conf
     ports:
-      - "6376:6379"
-  redis5:
-    image: docker.io/redis:5-alpine
-    ports:
-      - "6355:6379"
-  keydb6:
-    image: docker.io/eqalpha/keydb:alpine_x86_64_v6.3.1
-    ports:
-      - "6344:6379"
-  dragonflydb:
-    image: docker.io/docker.dragonflydb.io/dragonflydb/dragonfly:v1.20.1
-    ports:
-      - "6333:6379"
-  kvrocks:
-    image: docker.io/apache/kvrocks:2.8.0
-    ports:
-      - "6666:6666"
-  redisearch:
-    image: docker.io/redislabs/redisearch:2.8.4
-    ports:
-      - "6377:6379"
-  compat:
-    image: docker.io/redis/redis-stack:7.4.0-v0
-    ports:
-      - "6378:6379"
-  compat5:
-    image: docker.io/redis:5-alpine
-    ports:
-      - "6356:6379"
-  compat-redisearch:
-    image: docker.io/redis/redis-stack:7.4.0-v0
-    ports:
-      - "6381:6379"
+      - "6376:6376"
+    depends_on:
+      - valkey
   sentinel:
     image: docker.io/valkey/valkey:8.0-alpine
     entrypoint:
@@ -53,18 +31,6 @@ services:
     ports:
       - "6380:6380"
       - "26379:26379"
-  sentinel5:
-    image: docker.io/redis:5-alpine
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        redis-server --save "" --appendonly no --port 6385 &
-        echo "sentinel monitor test5 127.0.0.1 6385 2\n" > sentinel.conf
-        redis-server sentinel.conf --sentinel
-    ports:
-      - "6385:6385"
-      - "26355:26379"
   cluster:
     image: docker.io/valkey/valkey:8.0-alpine
     entrypoint:
@@ -80,36 +46,6 @@ services:
       - "7001:7001"
       - "7002:7002"
       - "7003:7003"
-  cluster5:
-    image: docker.io/redis:5-alpine
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        redis-server --port 7004 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7004.conf &
-        redis-server --port 7005 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7005.conf &
-        redis-server --port 7006 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7006.conf &
-        while ! redis-cli --cluster create 127.0.0.1:7004 127.0.0.1:7005 127.0.0.1:7006 --cluster-yes; do sleep 1; done
-        wait
-    ports:
-      - "7004:7004"
-      - "7005:7005"
-      - "7006:7006"
-  cluster5adapter:
-    image: docker.io/redis:5-alpine
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        redis-server --port 7007 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7007.conf &
-        redis-server --port 7008 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7008.conf &
-        redis-server --port 7009 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7009.conf &
-        while ! redis-cli --cluster create 127.0.0.1:7007 127.0.0.1:7008 127.0.0.1:7009 --cluster-yes; do sleep 1; done
-        wait
-    ports:
-      - "7007:7007"
-      - "7008:7008"
-      - "7009:7009"
   clusteradapter:
     image: docker.io/valkey/valkey:8.0-alpine
     entrypoint:

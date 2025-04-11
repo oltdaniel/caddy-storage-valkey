@@ -28,10 +28,7 @@ Caddy storage backend module with the native valkey golang client and caddy, not
 ```
 {
     storage valkey {
-        address {
-            127.0.0.1:6379
-        }
-        select_db 0
+        address 127.0.0.1:6379
     }
 }
 
@@ -77,19 +74,100 @@ CADDY_VERSION=latest xcaddy build --with github.com/oltdaniel/caddy-storage-valk
 > Currently there aren't all configuration options exposed to the caddy configuration. Depending on the complexity, they will be slowly added to support all technically possible configuration options.
 
 #### Examples
+
 ```
+# Connecting to single valkey node
+storage valkey {
+    # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
+    url redis://localhost:6379/0
+
+    lock_majority 1
+    disable_client_cache true
+}
+
 storage valkey {
     address 127.0.0.1:6379
-    select_db 0
+
+    db 0
+
+    lock_majority 1
+    disable_client_cache true
+}
+
+# Connecting to standalone valkey with replicas
+storage valkey {
+    # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
+    url redis://localhost:6379/0
+
+    replica {
+        localhost:6376
+    }
+
+    lock_majority 1
+    disable_client_cache true
+    send_to_replicas readonly
+}
+
+storage valkey {
+    address 127.0.0.1:6379
+
+    replica {
+        localhost:6376
+    }
+
+    db 0
+
+    lock_majority 1
+    disable_client_cache true
+    send_to_replicas readonly
+}
+
+# Connecting to valkey cluster
+storage valkey {
+    # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
+    url redis://localhost:7001?addr=localhost:7002&addr=localhost:7003
+
+    shuffle_init true
+
+    lock_majority 2
+    disable_client_cache true
 }
 
 storage valkey {
     address {
-        127.0.0.1:6379
-        127.0.0.1:6380
+        127.0.0.1:7001
+        127.0.0.1:7002
+        127.0.0.1:7003
     }
 
-    select_db 0
+    shuffle_init true
+
+    lock_majority 2
+    disable_client_cache true
+}
+
+# Connecting to valkey sentinels
+storage valkey {
+    # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
+    url redis://localhost:7001?addr=localhost:7002&addr=localhost:7003
+
+    sentinel_master_set my_master
+
+    lock_majority 2
+    disable_client_cache true
+}
+
+storage valkey {
+    address {
+        127.0.0.1:7001
+        127.0.0.1:7002
+        127.0.0.1:7003
+    }
+
+    sentinel_master_set my_master
+
+    lock_majority 2
+    disable_client_cache true
 }
 ```
 
@@ -97,8 +175,15 @@ storage valkey {
 
 | Name | Values | Description |
 |-|-|-|
+| `url` | any valkey client compatible uri schema | Any valid URL can be passed as documented by the valkey go client library [`valkey.ParseURL`](https://pkg.go.dev/github.com/valkey-io/valkey-go#ParseURL). This setting will conflict with any other client option set and will cause this module to throw an error due to an invalid config. |
 | `address` | single or list of valkey servers | This option accepts a single or a list of valkey server addresses in any format supported by the valkey go client `InitAddress` option. |
-| `select_db` | valid integer for selecting the valkey database | The range of a valid value in this case depends on your server configuration. Typical range is `0-15` (total 16). |
+| `replica` | single or list of valkey replica read-only servers | This option accepts a single or a list of valkey server addresses in any format supported by the valkey go client `StandaloneOption.ReplicaAddress` option. |
+| `db` | valid integer for selecting the valkey database <br><br>Default: `0` | The range of a valid value in this case depends on your server configuration. Typical range is `0-15` (total 16). |
+| `shuffle_init` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | Indicates to the client to shuffle all available addresses before connecting to the first entry. |
+| `sentinel_master_set` | sentinel master set name | This is the name you configured for your master set in you valkey sentinels setup. |
+| `lock_majority` | any integer larger than 0 <br><br>Default: `2` | The number of keys the client needs to aqcuire to receive the ownership of the requested lock. For more details take a look at the documentation of the [`valkey-go/valkeylock`](https://github.com/valkey-io/valkey-go/tree/main/valkeylock) package. |
+| `disable_client_cache` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | Indicates whether to disable client side caching. |
+| `send_to_replicas` | `none`, `readonly` <br><br>Default: `none` | Defines the strategy to determine what should be send to the replicas. |
 
 ### More?
 
@@ -129,7 +214,7 @@ CADDY_VERSION=master xcaddy build --with github.com/oltdaniel/caddy-storage-valk
 ./caddy run
 ```
 
-Additionally, there is a [`docker-compose.yml`](./docker-compose.yml) which contains a demo setup for many different valkey go client compatible clients which can be spun up for testing.
+Additionally, there is a [`docker-compose.yml`](./docker-compose.yml) which contains a demo setup for many different valkey server setups that can be used for testing.
 
 ### Testing
 
