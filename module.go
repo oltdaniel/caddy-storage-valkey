@@ -204,6 +204,12 @@ func (m *StorageValkeyModule) Validate() error {
 }
 
 func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
+	// Apply defaults where required
+
+	if m.LockMajority < 1 {
+		m.LockMajority = 2
+	}
+
 	// Create a new client options object based on the parsed config
 	var clientOptions *valkey.ClientOption
 
