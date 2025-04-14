@@ -71,51 +71,96 @@ CADDY_VERSION=latest xcaddy build --with github.com/oltdaniel/caddy-storage-valk
 ### storage module `valkey`
 
 > [!IMPORTANT]  
-> Currently there aren't all configuration options exposed to the caddy configuration. Depending on the complexity, they will be slowly added to support all technically possible configuration options.
+> All important client options should be exposed to the config. If there are any missing that could have any purposes in this specific use-case, please open an Issue.
 
 #### Examples
 
 ```
 # Connecting to single valkey node
 storage valkey {
+    # Server specific connection information can be passed in url format or as seperate config options
     # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
-    url redis://localhost:6379/0
+    url valkey://localhost:6379/0
 
     lock_majority 1
     disable_client_cache true
 }
 
 storage valkey {
+    # Server address can be passed as single entry or list instead of url
     address 127.0.0.1:6379
 
     db 0
 
     lock_majority 1
     disable_client_cache true
+}
+
+# Connecting with specific user to single node
+storage valkey {
+    url valkey://caddy:pleasechangeme@localhost:6382
+}
+
+storage valkey {
+    address localhost:6382
+
+    username caddy
+    password pleasechangeme
+}
+
+# Connecting to TLS single node
+storage valkey {
+    url valkeys://localhost:6380
+
+    tls_insecure false
+
+    # Any certificate or key can be passed as a PEM string or filepath as described in the table
+    tls_ca_cert <<CACERT
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+    CACERT
+}
+
+storage valkey {
+    url valkeys://localhost:6380
+
+    tls_insecure false
+
+    # Any certificate or key can be passed as a PEM string or filepath as described in the table
+    tls_ca_cert tests/ca.crt
+}
+
+
+# Connecting to TLS client auth single node
+storage valkey {
+    url valkeys://localhost:6381
+
+    tls_insecure false
+    tls_ca_cert <<CACERT
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+    CACERT
+    tls_client_cert <<CLICERT
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+    CLICERT
+    tls_client_key <<CLIKEY
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+    CLIKEY
 }
 
 # Connecting to standalone valkey with replicas
 storage valkey {
-    # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
     url redis://localhost:6379/0
 
     replica {
         localhost:6376
     }
-
-    lock_majority 1
-    disable_client_cache true
-    send_to_replicas readonly
-}
-
-storage valkey {
-    address 127.0.0.1:6379
-
-    replica {
-        localhost:6376
-    }
-
-    db 0
 
     lock_majority 1
     disable_client_cache true
@@ -133,36 +178,10 @@ storage valkey {
     disable_client_cache true
 }
 
-storage valkey {
-    address {
-        127.0.0.1:7001
-        127.0.0.1:7002
-        127.0.0.1:7003
-    }
-
-    shuffle_init true
-
-    lock_majority 2
-    disable_client_cache true
-}
-
 # Connecting to valkey sentinels
 storage valkey {
     # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
     url redis://localhost:7001?addr=localhost:7002&addr=localhost:7003
-
-    sentinel_master_set my_master
-
-    lock_majority 2
-    disable_client_cache true
-}
-
-storage valkey {
-    address {
-        127.0.0.1:7001
-        127.0.0.1:7002
-        127.0.0.1:7003
-    }
 
     sentinel_master_set my_master
 
@@ -184,6 +203,12 @@ storage valkey {
 | `lock_majority` | any integer larger than 0 <br><br>Default: `2` | The number of keys the client needs to aqcuire to receive the ownership of the requested lock. For more details take a look at the documentation of the [`valkey-go/valkeylock`](https://github.com/valkey-io/valkey-go/tree/main/valkeylock) package. |
 | `disable_client_cache` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | Indicates whether to disable client side caching. |
 | `send_to_replicas` | `none`, `readonly` <br><br>Default: `none` | Defines the strategy to determine what should be send to the replicas. |
+| `username` | username to authenticate against server | Sets the username to use to authenticate against server. This value is ignored, when using URL format for connection. |
+| `password` | password to authenticate against server | Sets the password to use to authenticate against server. This value is ignored, when using URL format for connection. |
+| `tls_ca_cert` | ca certificate as string or filepath | Sets the CA certificate for the client in order to verify CA certificate upon connection. |
+| `tls_insecure` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | Can disable/enable the verification of server CA certificate when connecting via TLS. <br><br> **NOTE: Should not be used in production.** |
+| `tls_cli_cert` | client certificate as string or filepath | Sets the certificate for the client to use for TLS authentication. Needs to be combined with `tls_cli_key`. |
+| `tls_cli_key` | client certificate key as string or filepath | Sets the certificate key for the client to use for TLS authentication. Needs to be combined with `tls_cli_cert`. |
 
 ### More?
 
@@ -216,11 +241,15 @@ CADDY_VERSION=master xcaddy build --with github.com/oltdaniel/caddy-storage-valk
 
 Additionally, there is a [`docker-compose.yml`](./docker-compose.yml) which contains a demo setup for many different valkey server setups that can be used for testing.
 
-### Testing
+### Testing Performance
 
-In order to test locking and the load the setup can handle, there is a testing script in [`./scripts/generate_benchmark.sh`](./scripts/generate_benchmark.sh) which will generate an Caddyfile with a huger number of domains for which internally signed certificates are generated with a lifetime of 1 hour and a storage cleanup intervall of 60 seconds, to stress this storage module.
+In order to test locking and the load the setup can handle, there is a testing script in [`./scripts/generate-benchmark.sh`](./scripts/generate-benchmark.sh) which will generate an Caddyfile with a huger number of domains for which internally signed certificates are generated with a lifetime of 1 hour and a storage cleanup intervall of 60 seconds, to stress this storage module.
 
 > A test with 10.000 domains, showed the cleanup to take about 90 seconds to finish. There haven't been any long running tests yet or other more extreme tests.
+
+### Testing TLS
+
+In order to test the TLS feature locally, there is a small script [`./scripts/generate-test-certs.sh`](./scripts/generate-test-certs.sh) which generates all the necessary certificates for testing. The ports in the examples above match the correct Container which is already configured to be used for tetsing each scenario.
 
 ## License
 

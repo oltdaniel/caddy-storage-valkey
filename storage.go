@@ -44,7 +44,6 @@ func NewCaddyStorageValkey(clientOptions valkey.ClientOption, options CaddyStora
 	// Create a new client for valkey
 	valkeyClient, err := valkey.NewClient(clientOptions)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 

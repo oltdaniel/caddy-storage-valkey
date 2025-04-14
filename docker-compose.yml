@@ -11,25 +11,68 @@ services:
       - /bin/sh
       - -c
       - |
-        valkey-server --save "" --appendonly no --port 6376 &
         echo "replica-read-only yes" > replica.conf
         echo "replicaof valkey 6379" >> replica.conf
-        valkey-server replica.conf
+        valkey-server replica.conf --loglevel verbose --save "" --appendonly no --port 6376
     ports:
       - "6376:6376"
     depends_on:
       - valkey
+  tls:
+    image: docker.io/valkey/valkey:8.0-alpine
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        valkey-server --loglevel verbose --save "" --appendonly no \
+        --tls-port 6380 --port 0 \
+        --tls-cert-file /tests/server.crt \
+        --tls-key-file /tests/server.key \
+        --tls-ca-cert-file /tests/ca.crt \
+        --tls-dh-params-file /tests/valkey.dh \
+        --tls-auth-clients no
+    volumes:
+      - ./tests:/tests:ro
+    ports:
+      - "6380:6380"
+  tls-clientauth:
+    image: docker.io/valkey/valkey:8.0-alpine
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        valkey-server --loglevel verbose --save "" --appendonly no \
+        --tls-port 6381 --port 0 \
+        --tls-cert-file /tests/server.crt \
+        --tls-key-file /tests/server.key \
+        --tls-ca-cert-file /tests/ca.crt \
+        --tls-dh-params-file /tests/valkey.dh
+    volumes:
+      - ./tests:/tests:ro
+    ports:
+      - "6381:6381"
+  auth:
+    image: docker.io/valkey/valkey:8.0-alpine
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "user caddy on -DEBUG +@all ~* >pleasechangeme" > valkey.conf &&
+        echo "user default off" >> valkey.conf &&
+        valkey-server valkey.conf --loglevel verbose --save "" --appendonly no --port 6382
+    ports:
+      - "6382:6382"
   sentinel:
     image: docker.io/valkey/valkey:8.0-alpine
     entrypoint:
       - /bin/sh
       - -c
       - |
-        valkey-server --save "" --appendonly no --port 6380 &
-        echo "sentinel monitor test 127.0.0.1 6380 2\n" > sentinel.conf
+        valkey-server --loglevel verbose --save "" --appendonly no --port 6383 &
+        echo "sentinel monitor test 127.0.0.1 6383 2\n" > sentinel.conf
         valkey-server sentinel.conf --sentinel
     ports:
-      - "6380:6380"
+      - "6383:6383"
       - "26379:26379"
   cluster:
     image: docker.io/valkey/valkey:8.0-alpine
@@ -37,9 +80,9 @@ services:
       - /bin/sh
       - -c
       - |
-        valkey-server --port 7001 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7001.conf &
-        valkey-server --port 7002 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7002.conf &
-        valkey-server --port 7003 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7003.conf &
+        valkey-server --port 7001 --loglevel verbose --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7001.conf &
+        valkey-server --port 7002 --loglevel verbose --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7002.conf &
+        valkey-server --port 7003 --loglevel verbose --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7003.conf &
         while ! valkey-cli --cluster create 127.0.0.1:7001 127.0.0.1:7002 127.0.0.1:7003 --cluster-yes; do sleep 1; done
         wait
     ports:
@@ -52,9 +95,9 @@ services:
       - /bin/sh
       - -c
       - |
-        valkey-server --port 7010 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7010.conf &
-        valkey-server --port 7011 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7011.conf &
-        valkey-server --port 7012 --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7012.conf &
+        valkey-server --port 7010 --loglevel verbose --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7010.conf &
+        valkey-server --port 7011 --loglevel verbose --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7011.conf &
+        valkey-server --port 7012 --loglevel verbose --save "" --appendonly no --cluster-enabled yes --cluster-config-file 7012.conf &
         while ! valkey-cli --cluster create 127.0.0.1:7010 127.0.0.1:7011 127.0.0.1:7012 --cluster-yes; do sleep 1; done
         wait
     ports:
