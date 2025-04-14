@@ -156,7 +156,7 @@ storage valkey {
 
 # Connecting to standalone valkey with replicas
 storage valkey {
-    url redis://localhost:6379/0
+    url valkey://localhost:6379/0
 
     replica {
         localhost:6376
@@ -170,7 +170,7 @@ storage valkey {
 # Connecting to valkey cluster
 storage valkey {
     # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
-    url redis://localhost:7001?addr=localhost:7002&addr=localhost:7003
+    url valkey://localhost:7001?addr=localhost:7002&addr=localhost:7003
 
     shuffle_init true
 
@@ -181,7 +181,7 @@ storage valkey {
 # Connecting to valkey sentinels
 storage valkey {
     # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
-    url redis://localhost:7001?addr=localhost:7002&addr=localhost:7003
+    url valkey://localhost:7001?addr=localhost:7002&addr=localhost:7003
 
     sentinel_master_set my_master
 

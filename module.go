@@ -339,15 +339,20 @@ func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
 	}
 
 	// Check whether any TLS option has been set
-	isTlsConfigured := (m.TlsInsecure != false ||
+	isTlsConfigured := (m.TlsInsecure ||
 		len(m.TlsCaCert) > 0 ||
 		len(m.TlsCliCert) > 0 ||
 		len(m.TlsCliKey) > 0)
 
 	if isTlsConfigured {
-		// Initialize client TLS config
-		clientOptions.TLSConfig = &tls.Config{
-			InsecureSkipVerify: m.TlsInsecure,
+		// Initialize client TLS config if not present
+		// NOTE: It can be present when we parse the URL and it has the TLS mentioned
+		if clientOptions.TLSConfig == nil {
+			clientOptions.TLSConfig = &tls.Config{
+				InsecureSkipVerify: m.TlsInsecure,
+			}
+		} else {
+			clientOptions.TLSConfig.InsecureSkipVerify = m.TlsInsecure
 		}
 
 		// Initialize CA Certificate if present
