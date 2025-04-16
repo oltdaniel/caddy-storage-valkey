@@ -35,10 +35,11 @@ type StorageValkeyModule struct {
 	Username string `json:"username,omitempty"`
 	Password string `json:"password,omitempty"`
 
-	TlsInsecure bool   `json:"tls_insecure,omitempty"`
-	TlsCaCert   string `json:"tls_ca_cert,omitempty"`
-	TlsCliCert  string `json:"tls_cli_cert,omitempty"`
-	TlsCliKey   string `json:"tls_cli_key,omitempty"`
+	TlsInsecure   bool   `json:"tls_insecure,omitempty"`
+	TlsMinVersion string `json:"tls_min_version,omitempty"`
+	TlsCaCert     string `json:"tls_ca_cert,omitempty"`
+	TlsCliCert    string `json:"tls_cli_cert,omitempty"`
+	TlsCliKey     string `json:"tls_cli_key,omitempty"`
 
 	storage *CaddyStorageValkey
 }
@@ -166,6 +167,14 @@ func (m *StorageValkeyModule) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 					}
 
 					m.TlsInsecure = tlsInsecure
+				}
+			case "tls_min_version":
+				{
+					if len(configVal) > 1 {
+						return d.Err("expected only a single value for `tls_min_version`")
+					}
+
+					m.TlsMinVersion = configVal[0]
 				}
 			case "tls_ca_cert":
 				{
@@ -299,6 +308,17 @@ func (m *StorageValkeyModule) Validate() error {
 		return errors.New("invalid value for `send_to_replicas`")
 	}
 
+	// Verify TLS min version
+	switch m.TlsMinVersion {
+	case "", "tlsv1.2":
+		// This is the default option
+		break
+	case "tlsv1.3":
+		break
+	default:
+		return errors.New("invalud value for `tls_min_version`")
+	}
+
 	// Verify TLS options are PEM or filepaths
 	if !validatePemStringOrFilepathOption(m.TlsCaCert) {
 		return errors.New("given value is no PEM string or filepath for key `tls_ca_cert`")
@@ -340,6 +360,7 @@ func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
 
 	// Check whether any TLS option has been set
 	isTlsConfigured := (m.TlsInsecure ||
+		len(m.TlsMinVersion) > 0 ||
 		len(m.TlsCaCert) > 0 ||
 		len(m.TlsCliCert) > 0 ||
 		len(m.TlsCliKey) > 0)
@@ -353,6 +374,21 @@ func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
 			}
 		} else {
 			clientOptions.TLSConfig.InsecureSkipVerify = m.TlsInsecure
+		}
+
+		// Set min version, or fallback to default
+		if len(m.TlsMinVersion) > 0 {
+			switch m.TlsMinVersion {
+			case "tlsv1.2":
+				clientOptions.TLSConfig.MinVersion = tls.VersionTLS12
+			case "tlsv1.3":
+				clientOptions.TLSConfig.MinVersion = tls.VersionTLS13
+			default:
+				return errors.New("invalud value for `tls_min_version`")
+			}
+		} else {
+			// Default is TLS v1.2
+			clientOptions.TLSConfig.MinVersion = tls.VersionTLS12
 		}
 
 		// Initialize CA Certificate if present
