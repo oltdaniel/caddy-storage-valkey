@@ -38,8 +38,8 @@ type StorageValkeyModule struct {
 	TlsInsecure   bool   `json:"tls_insecure,omitempty"`
 	TlsMinVersion string `json:"tls_min_version,omitempty"`
 	TlsCaCert     string `json:"tls_ca_cert,omitempty"`
-	TlsCliCert    string `json:"tls_cli_cert,omitempty"`
-	TlsCliKey     string `json:"tls_cli_key,omitempty"`
+	TlsClientCert string `json:"tls_client_cert,omitempty"`
+	TlsClientKey  string `json:"tls_client_key,omitempty"`
 
 	storage *CaddyStorageValkey
 }
@@ -184,21 +184,21 @@ func (m *StorageValkeyModule) UnmarshalCaddyfile(d *caddyfile.Dispenser) error {
 
 					m.TlsCaCert = configVal[0]
 				}
-			case "tls_cli_cert":
+			case "tls_client_cert":
 				{
 					if len(configVal) > 1 {
-						return d.Err("expected only a single value for `tls_cli_cert`")
+						return d.Err("expected only a single value for `tls_client_cert`")
 					}
 
-					m.TlsCliCert = configVal[0]
+					m.TlsClientCert = configVal[0]
 				}
-			case "tls_cli_key":
+			case "tls_client_key":
 				{
 					if len(configVal) > 1 {
-						return d.Err("expected only a single value for `tls_cli_key`")
+						return d.Err("expected only a single value for `tls_client_key`")
 					}
 
-					m.TlsCliKey = configVal[0]
+					m.TlsClientKey = configVal[0]
 				}
 			default:
 				// Unknown key for this config
@@ -323,11 +323,11 @@ func (m *StorageValkeyModule) Validate() error {
 	if !validatePemStringOrFilepathOption(m.TlsCaCert) {
 		return errors.New("given value is no PEM string or filepath for key `tls_ca_cert`")
 	}
-	if !validatePemStringOrFilepathOption(m.TlsCliCert) {
-		return errors.New("given value is no PEM string or filepath for key `tls_cli_cert`")
+	if !validatePemStringOrFilepathOption(m.TlsClientCert) {
+		return errors.New("given value is no PEM string or filepath for key `tls_client_cert`")
 	}
-	if !validatePemStringOrFilepathOption(m.TlsCliKey) {
-		return errors.New("given value is no PEM string or filepath for key `tls_cli_key`")
+	if !validatePemStringOrFilepathOption(m.TlsClientKey) {
+		return errors.New("given value is no PEM string or filepath for key `tls_client_key`")
 	}
 
 	return nil
@@ -362,8 +362,8 @@ func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
 	isTlsConfigured := (m.TlsInsecure ||
 		len(m.TlsMinVersion) > 0 ||
 		len(m.TlsCaCert) > 0 ||
-		len(m.TlsCliCert) > 0 ||
-		len(m.TlsCliKey) > 0)
+		len(m.TlsClientCert) > 0 ||
+		len(m.TlsClientKey) > 0)
 
 	if isTlsConfigured {
 		// Initialize client TLS config if not present
@@ -415,11 +415,11 @@ func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
 		}
 
 		// Configure client certificate
-		if len(m.TlsCliCert) > 0 || len(m.TlsCliKey) > 0 {
+		if len(m.TlsClientCert) > 0 || len(m.TlsClientKey) > 0 {
 			// SMall sanity check
-			if len(m.TlsCliCert) > 0 && len(m.TlsCliKey) == 0 {
+			if len(m.TlsClientCert) > 0 && len(m.TlsClientKey) == 0 {
 				return errors.New("both client certificate and key need to be provided, key is missing")
-			} else if len(m.TlsCliCert) == 0 && len(m.TlsCliKey) > 0 {
+			} else if len(m.TlsClientCert) == 0 && len(m.TlsClientKey) > 0 {
 				return errors.New("both client certificate and key need to be provided, certificate is missing")
 			}
 
@@ -428,36 +428,36 @@ func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
 
 			// NOTE: The following two blocks have been copied in order to keep the verbose error messages
 
-			if certData, _ := pem.Decode([]byte(m.TlsCliCert)); certData != nil {
-				certPem = []byte(m.TlsCliCert)
-			} else if isFilePath(m.TlsCliCert) {
-				rawCert, err := os.ReadFile(m.TlsCliCert)
+			if certData, _ := pem.Decode([]byte(m.TlsClientCert)); certData != nil {
+				certPem = []byte(m.TlsClientCert)
+			} else if isFilePath(m.TlsClientCert) {
+				rawCert, err := os.ReadFile(m.TlsClientCert)
 				if err != nil {
 					return err
 				}
 				if certData, _ := pem.Decode(rawCert); certData != nil {
 					certPem = rawCert
 				} else {
-					return errors.New("invalid PEM in `tls_cli_cert` file")
+					return errors.New("invalid PEM in `tls_client_cert` file")
 				}
 			} else {
-				return errors.New("failed to add `tls_cli_cert` is no PEM string or filepath")
+				return errors.New("failed to add `tls_client_cert` is no PEM string or filepath")
 			}
 
-			if keyData, _ := pem.Decode([]byte(m.TlsCliKey)); keyData != nil {
-				keyPem = []byte(m.TlsCliKey)
-			} else if isFilePath(m.TlsCliKey) {
-				rawKey, err := os.ReadFile(m.TlsCliKey)
+			if keyData, _ := pem.Decode([]byte(m.TlsClientKey)); keyData != nil {
+				keyPem = []byte(m.TlsClientKey)
+			} else if isFilePath(m.TlsClientKey) {
+				rawKey, err := os.ReadFile(m.TlsClientKey)
 				if err != nil {
 					return err
 				}
 				if keyData, _ := pem.Decode(rawKey); keyData != nil {
 					keyPem = rawKey
 				} else {
-					return errors.New("invalid PEM in `tls_cli_key` file")
+					return errors.New("invalid PEM in `tls_client_key` file")
 				}
 			} else {
-				return errors.New("failed to add `tls_cli_key` is no PEM string or filepath")
+				return errors.New("failed to add `tls_client_key` is no PEM string or filepath")
 			}
 
 			// Build certificate out of keypair

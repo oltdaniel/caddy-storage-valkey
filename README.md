@@ -146,12 +146,12 @@ storage valkey {
     ...
     -----END CERTIFICATE-----
     CACERT
-    tls_cli_cert <<CLICERT
+    tls_client_cert <<CLICERT
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
     CLICERT
-    tls_cli_cert <<CLIKEY
+    tls_client_cert <<CLIKEY
     -----BEGIN PRIVATE KEY-----
     ...
     -----END PRIVATE KEY-----
@@ -212,8 +212,8 @@ storage valkey {
 | `tls_ca_cert` | ca certificate as string or filepath | Sets the CA certificate for the client in order to verify CA certificate upon connection. |
 | `tls_insecure` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | Can disable/enable the verification of server CA certificate when connecting via TLS. <br><br> **NOTE: Should not be used in production.** |
 | `tls_min_version` | `tlsv1.2`, `tlsv1.3` <br><br>Default: `tlsv1.2` | Set the minimum TLS version that the connection needs to use. <br><br> **NOTE: Older versions have been excluded as they are not recommended and the default for Valkey is TLSv1.2 and TLSv1.3.** |
-| `tls_cli_cert` | client certificate as string or filepath | Sets the certificate for the client to use for TLS authentication. Needs to be combined with `tls_cli_key`. |
-| `tls_cli_key` | client certificate key as string or filepath | Sets the certificate key for the client to use for TLS authentication. Needs to be combined with `tls_cli_cert`. |
+| `tls_client_cert` | client certificate as string or filepath | Sets the certificate for the client to use for TLS authentication. Needs to be combined with `tls_client_key`. |
+| `tls_client_key` | client certificate key as string or filepath | Sets the certificate key for the client to use for TLS authentication. Needs to be combined with `tls_client_cert`. |
 
 ### More?
 
