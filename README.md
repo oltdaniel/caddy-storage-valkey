@@ -151,7 +151,7 @@ storage valkey {
     ...
     -----END CERTIFICATE-----
     CLICERT
-    tls_client_cert <<CLIKEY
+    tls_client_key <<CLIKEY
     -----BEGIN PRIVATE KEY-----
     ...
     -----END PRIVATE KEY-----
