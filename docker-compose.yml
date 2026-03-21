@@ -2,11 +2,11 @@
 
 services:
   valkey:
-    image: docker.io/valkey/valkey:8.0-alpine
+    image: ghcr.io/valkey-io/valkey:alpine
     ports:
       - "6379:6379"
   replica:
-    image: docker.io/valkey/valkey:8.0-alpine
+    image: ghcr.io/valkey-io/valkey:alpine
     entrypoint:
       - /bin/sh
       - -c
@@ -19,7 +19,7 @@ services:
     depends_on:
       - valkey
   tls:
-    image: docker.io/valkey/valkey:8.0-alpine
+    image: ghcr.io/valkey-io/valkey:alpine
     entrypoint:
       - /bin/sh
       - -c
@@ -36,7 +36,7 @@ services:
     ports:
       - "6380:6380"
   tls-clientauth:
-    image: docker.io/valkey/valkey:8.0-alpine
+    image: ghcr.io/valkey-io/valkey:alpine
     entrypoint:
       - /bin/sh
       - -c
@@ -52,7 +52,7 @@ services:
     ports:
       - "6381:6381"
   auth:
-    image: docker.io/valkey/valkey:8.0-alpine
+    image: ghcr.io/valkey-io/valkey:alpine
     entrypoint:
       - /bin/sh
       - -c
@@ -63,7 +63,7 @@ services:
     ports:
       - "6382:6382"
   sentinel:
-    image: docker.io/valkey/valkey:8.0-alpine
+    image: ghcr.io/valkey-io/valkey:alpine
     entrypoint:
       - /bin/sh
       - -c
@@ -75,7 +75,7 @@ services:
       - "6383:6383"
       - "26379:26379"
   cluster:
-    image: docker.io/valkey/valkey:8.0-alpine
+    image: ghcr.io/valkey-io/valkey:alpine
     entrypoint:
       - /bin/sh
       - -c
@@ -90,7 +90,7 @@ services:
       - "7002:7002"
       - "7003:7003"
   clusteradapter:
-    image: docker.io/valkey/valkey:8.0-alpine
+    image: ghcr.io/valkey-io/valkey:alpine
     entrypoint:
       - /bin/sh
       - -c

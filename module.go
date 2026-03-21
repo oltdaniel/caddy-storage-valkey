@@ -267,73 +267,25 @@ func validatePemStringOrFilepathOption(val string) bool {
 	return ok && err == nil
 }
 
-func (m *StorageValkeyModule) Validate() error {
-	// NOTE: The majority of checking will be done by creating a new valkey client.
-
-	// Verify no other client option is set when the URL has been set
-	isUrlSet := (m.Url != "")
-
-	if len(m.InitAddress) > 0 && isUrlSet {
-		return errors.New("setting the `address` and `url` option is not allowed")
-	}
-
-	if len(m.Username) > 0 && isUrlSet {
-		return errors.New("setting the `username` and `url` option is not allowed")
-	}
-
-	if len(m.Password) > 0 && isUrlSet {
-		return errors.New("setting the `password` and `url` option is not allowed")
-	}
-
-	// NOTE: I'm aware that setting the db option can be set to zero, but this is the default
-	// and doesn't change the behavior in any way. The workaround is not worth it.
-	if m.SelectDb != 0 && isUrlSet {
-		return errors.New("setting the `db` and `url` option is not allowed")
-	}
-
-	// Check for sensible value on lock majority
-	if m.LockMajority < 1 {
-		return errors.New("impossible value for `lock_majority` option (value > 0 required)")
-	}
-
-	// Check SendToReplicas for valid strategy
-	switch m.SendToReplicas {
-	case "", "none":
-		// This is the default option which equals to none/no command to replica
-		break
-	case "readonly":
-		// This option sends readonly commands to the replica
-		break
-	default:
-		return errors.New("invalid value for `send_to_replicas`")
-	}
-
-	// Verify TLS min version
-	switch m.TlsMinVersion {
-	case "", "tlsv1.2":
-		// This is the default option
-		break
-	case "tlsv1.3":
-		break
-	default:
-		return errors.New("invalud value for `tls_min_version`")
-	}
-
-	// Verify TLS options are PEM or filepaths
-	if !validatePemStringOrFilepathOption(m.TlsCaCert) {
-		return errors.New("given value is no PEM string or filepath for key `tls_ca_cert`")
-	}
-	if !validatePemStringOrFilepathOption(m.TlsClientCert) {
-		return errors.New("given value is no PEM string or filepath for key `tls_client_cert`")
-	}
-	if !validatePemStringOrFilepathOption(m.TlsClientKey) {
-		return errors.New("given value is no PEM string or filepath for key `tls_client_key`")
-	}
-
-	return nil
-}
-
 func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
+	// Replace placeholders in relevant configuration options with their actual values
+
+	repl := caddy.NewReplacer()
+
+	m.Url = repl.ReplaceAll(m.Url, "")
+	m.Username = repl.ReplaceAll(m.Username, "")
+	m.Password = repl.ReplaceAll(m.Password, "")
+	m.TlsCaCert = repl.ReplaceAll(m.TlsCaCert, "")
+	m.TlsClientCert = repl.ReplaceAll(m.TlsClientCert, "")
+	m.TlsClientKey = repl.ReplaceAll(m.TlsClientKey, "")
+
+	for i := range m.InitAddress {
+		m.InitAddress[i] = repl.ReplaceAll(m.InitAddress[i], "")
+	}
+	for i := range m.ReplicaAddress {
+		m.ReplicaAddress[i] = repl.ReplaceAll(m.ReplicaAddress[i], "")
+	}
+
 	// Apply defaults where required
 
 	if m.LockMajority < 1 {
@@ -384,7 +336,7 @@ func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
 			case "tlsv1.3":
 				clientOptions.TLSConfig.MinVersion = tls.VersionTLS13
 			default:
-				return errors.New("invalud value for `tls_min_version`")
+				return errors.New("invalid value for `tls_min_version`")
 			}
 		} else {
 			// Default is TLS v1.2
@@ -511,6 +463,72 @@ func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
 	}
 
 	m.storage = valkeyStorage
+
+	return nil
+}
+
+func (m *StorageValkeyModule) Validate() error {
+	// NOTE: The majority of checking will be done by creating a new valkey client.
+
+	// Verify no other client option is set when the URL has been set
+	isUrlSet := (m.Url != "")
+
+	if len(m.InitAddress) > 0 && isUrlSet {
+		return errors.New("setting the `address` and `url` option is not allowed")
+	}
+
+	if len(m.Username) > 0 && isUrlSet {
+		return errors.New("setting the `username` and `url` option is not allowed")
+	}
+
+	if len(m.Password) > 0 && isUrlSet {
+		return errors.New("setting the `password` and `url` option is not allowed")
+	}
+
+	// NOTE: I'm aware that setting the db option can be set to zero, but this is the default
+	// and doesn't change the behavior in any way. The workaround is not worth it.
+	if m.SelectDb != 0 && isUrlSet {
+		return errors.New("setting the `db` and `url` option is not allowed")
+	}
+
+	// Check for sensible value on lock majority
+	if m.LockMajority < 1 {
+		return errors.New("impossible value for `lock_majority` option (value > 0 required)")
+	}
+
+	// Check SendToReplicas for valid strategy
+	switch m.SendToReplicas {
+	case "", "none":
+		// This is the default option which equals to none/no command to replica
+		break
+	case "readonly":
+		// This option sends readonly commands to the replica
+		break
+	default:
+		return errors.New("invalid value for `send_to_replicas`")
+	}
+
+	// Verify TLS min version
+	switch m.TlsMinVersion {
+	case "", "tlsv1.2":
+		// This is the default option
+		break
+	case "tlsv1.3":
+		break
+	default:
+		return errors.New("invalid value for `tls_min_version`")
+	}
+
+	// Verify TLS options are PEM or filepaths
+	if !validatePemStringOrFilepathOption(m.TlsCaCert) {
+		return errors.New("given value is no PEM string or filepath for key `tls_ca_cert`")
+	}
+	if !validatePemStringOrFilepathOption(m.TlsClientCert) {
+		return errors.New("given value is no PEM string or filepath for key `tls_client_cert`")
+	}
+	if !validatePemStringOrFilepathOption(m.TlsClientKey) {
+		return errors.New("given value is no PEM string or filepath for key `tls_client_key`")
+	}
 
 	return nil
 }

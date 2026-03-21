@@ -192,28 +192,33 @@ storage valkey {
     lock_majority 2
     disable_client_cache true
 }
+
+# Using caddy placeholders
+storage valkey {
+    url {env.VALKEY_URI}
+}
 ```
 
 #### Values
 
-| Name | Values | Description |
-|-|-|-|
-| `url` | any valkey client compatible uri schema | Any valid URL can be passed as documented by the valkey go client library [`valkey.ParseURL`](https://pkg.go.dev/github.com/valkey-io/valkey-go#ParseURL). This setting will conflict with any other client option set and will cause this module to throw an error due to an invalid config. |
-| `address` | single or list of valkey servers | This option accepts a single or a list of valkey server addresses in any format supported by the valkey go client `InitAddress` option. |
-| `replica` | single or list of valkey replica read-only servers | This option accepts a single or a list of valkey server addresses in any format supported by the valkey go client `StandaloneOption.ReplicaAddress` option. |
-| `db` | valid integer for selecting the valkey database <br><br>Default: `0` | The range of a valid value in this case depends on your server configuration. Typical range is `0-15` (total 16). |
-| `shuffle_init` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | Indicates to the client to shuffle all available addresses before connecting to the first entry. |
-| `sentinel_master_set` | sentinel master set name | This is the name you configured for your master set in you valkey sentinels setup. |
-| `lock_majority` | any integer larger than 0 <br><br>Default: `2` | The number of keys the client needs to aqcuire to receive the ownership of the requested lock. For more details take a look at the documentation of the [`valkey-go/valkeylock`](https://github.com/valkey-io/valkey-go/tree/main/valkeylock) package. |
-| `disable_client_cache` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | Indicates whether to disable client side caching. |
-| `send_to_replicas` | `none`, `readonly` <br><br>Default: `none` | Defines the strategy to determine what should be send to the replicas. |
-| `username` | username to authenticate against server | Sets the username to use to authenticate against server. This value is ignored, when using URL format for connection. |
-| `password` | password to authenticate against server | Sets the password to use to authenticate against server. This value is ignored, when using URL format for connection. |
-| `tls_ca_cert` | ca certificate as string or filepath | Sets the CA certificate for the client in order to verify CA certificate upon connection. |
-| `tls_insecure` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | Can disable/enable the verification of server CA certificate when connecting via TLS. <br><br> **NOTE: Should not be used in production.** |
-| `tls_min_version` | `tlsv1.2`, `tlsv1.3` <br><br>Default: `tlsv1.2` | Set the minimum TLS version that the connection needs to use. <br><br> **NOTE: Older versions have been excluded as they are not recommended and the default for Valkey is TLSv1.2 and TLSv1.3.** |
-| `tls_client_cert` | client certificate as string or filepath | Sets the certificate for the client to use for TLS authentication. Needs to be combined with `tls_client_key`. |
-| `tls_client_key` | client certificate key as string or filepath | Sets the certificate key for the client to use for TLS authentication. Needs to be combined with `tls_client_cert`. |
+| Name | Values | Placeholders | Description |
+|-|-|-|-|
+| `url` | any valkey client compatible uri schema | yes | Any valid URL can be passed as documented by the valkey go client library [`valkey.ParseURL`](https://pkg.go.dev/github.com/valkey-io/valkey-go#ParseURL). This setting will conflict with any other client option set and will cause this module to throw an error due to an invalid config. |
+| `address` | single or list of valkey servers | yes | This option accepts a single or a list of valkey server addresses in any format supported by the valkey go client `InitAddress` option. |
+| `replica` | single or list of valkey replica read-only servers | yes | This option accepts a single or a list of valkey server addresses in any format supported by the valkey go client `StandaloneOption.ReplicaAddress` option. |
+| `db` | valid integer for selecting the valkey database <br><br>Default: `0` | no | The range of a valid value in this case depends on your server configuration. Typical range is `0-15` (total 16). |
+| `shuffle_init` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | no | Indicates to the client to shuffle all available addresses before connecting to the first entry. |
+| `sentinel_master_set` | sentinel master set name | no | This is the name you configured for your master set in you valkey sentinels setup. |
+| `lock_majority` | any integer larger than 0 <br><br>Default: `2` | no | The number of keys the client needs to aqcuire to receive the ownership of the requested lock. For more details take a look at the documentation of the [`valkey-go/valkeylock`](https://github.com/valkey-io/valkey-go/tree/main/valkeylock) package. |
+| `disable_client_cache` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | no | Indicates whether to disable client side caching. |
+| `send_to_replicas` | `none`, `readonly` <br><br>Default: `none` | no | Defines the strategy to determine what should be send to the replicas. |
+| `username` | username to authenticate against server | yes | Sets the username to use to authenticate against server. This value is ignored, when using URL format for connection. |
+| `password` | password to authenticate against server | yes | Sets the password to use to authenticate against server. This value is ignored, when using URL format for connection. |
+| `tls_ca_cert` | ca certificate as string or filepath | yes | Sets the CA certificate for the client in order to verify CA certificate upon connection. |
+| `tls_insecure` | accepted input for [`strconv.ParseBool`](https://pkg.go.dev/strconv#ParseBool) <br><br>Default: `false` | no | Can disable/enable the verification of server CA certificate when connecting via TLS. <br><br> **NOTE: Should not be used in production.** |
+| `tls_min_version` | `tlsv1.2`, `tlsv1.3` <br><br>Default: `tlsv1.2` | no | Set the minimum TLS version that the connection needs to use. <br><br> **NOTE: Older versions have been excluded as they are not recommended and the default for Valkey is TLSv1.2 and TLSv1.3.** |
+| `tls_client_cert` | client certificate as string or filepath | yes | Sets the certificate for the client to use for TLS authentication. Needs to be combined with `tls_client_key`. |
+| `tls_client_key` | client certificate key as string or filepath | yes | Sets the certificate key for the client to use for TLS authentication. Needs to be combined with `tls_client_cert`. |
 
 ### More?
 
@@ -225,8 +230,37 @@ We use the most simple commands in order to make this work and avoid managing an
 
 The Lock structure is handled by the sub-package `valkeylock` of the Valkey Go Client Library and some essential aspects are exposed via the configuration.
 
+In regards to TLS, this module does not have any function to reload the TLS certificates while running. For this we recommend to rely on Caddy itself, using the reload functionality. This can be either achieved using the `caddy reload` command or using the reload function for your prefered system service tool.
+
+### Exploring storage structure
+
+If you like, you can just connect directly to the Valkey Instance you are running using the `valkey-cli` and explore the storage structure. For this, simply connect to the instance you configured and move around with the following commands:
+
+```bash
+$ valkey-cli -u valkey://localhost:6379/0
+# Or using docker/podman/...: docker run -it --network=host ghcr.io/valkey-io/valkey:alpine valkey-cli -u valkey://localhost:6379/0
+127.0.0.1:6379> KEYS *
+1) "pki/authorities/local/intermediate.key"
+2) "certificates/local/helloworld.localhost/helloworld.localhost.key"
+3) "certificates/local/helloworld.localhost/helloworld.localhost.crt"
+4) "pki/authorities/local/intermediate.crt"
+5) "pki/authorities/local/root.key"
+6) "certificates/local/helloworld.localhost/helloworld.localhost.json"
+7) "last_clean.json"
+8) "pki/authorities/local/root.crt"
+127.0.0.1:6379> HGETALL "certificates/local/helloworld.localhost/helloworld.localhost.crt"
+1) "size"
+2) "1356"
+3) "last_modified"
+4) "2026-03-21T11:09:50+01:00"
+5) "value"
+6) "-----BEGIN CERTIFICATE-----\nMIIByjCCAW+gAwIBAgIRAMaMVn4X3VJ0bkrymg6Z/uAwCgYIKoZIzj0EAwIwMzEx\nMC8GA1UEAxMoQ2FkZHkgTG9jYWwgQXV0aG9yaXR5IC0gRUNDIEludGVybWVkaWF0\nZTAeFw0yNjAzMjExMDA5NTBaFw0yNjAzMjExMTA5NTBaMAAwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAAT/QMUM4eDjuXPb9i/qAL68oT8niY5fIUOrRwm1pOEBO3KA\nzTKIZGXjSMsg0JpMD1af07D1xikwQx37FZA+WN/Bo4GWMIGTMA4GA1UdDwEB/wQE\nAwIHgDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwHQYDVR0OBBYEFPy9\nEDChE1UHfI/YtDiRGhKvKDVJMB8GA1UdIwQYMBaAFKaRlYPZfNOUEyaTxegIIhTv\nAEhSMCIGA1UdEQEB/wQYMBaCFGhlbGxvd29ybGQubG9jYWxob3N0MAoGCCqGSM49\nBAMCA0kAMEYCIQDER26QI8bjwICzJAdXnXX1LjwUTpVZBjknofIZ12FJWAIhAIpI\nUzC757DYpWaIhXmJFlj2GR/Q/lEAyYVXdXFSPImn\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBxzCCAW6gAwIBAgIRAOlTgRnSVthuSnjKrnFOBCAwCgYIKoZIzj0EAwIwMDEu\nMCwGA1UEAxMlQ2FkZHkgTG9jYWwgQXV0aG9yaXR5IC0gMjAyNiBFQ0MgUm9vdDAe\nFw0yNjAzMjExMDA5MDhaFw0yNjAzMjgxMDA5MDhaMDMxMTAvBgNVBAMTKENhZGR5\nIExvY2FsIEF1dGhvcml0eSAtIEVDQyBJbnRlcm1lZGlhdGUwWTATBgcqhkjOPQIB\nBggqhkjOPQMBBwNCAASPOvhKfMfrNcwka3cDa0E08XyAKwsQhADI5SfXRProjb1t\nkN8vqnxxrbh65C3c3txheOZ15xyEyK+o/5X5NJ9yo2YwZDAOBgNVHQ8BAf8EBAMC\nAQYwEgYDVR0TAQH/BAgwBgEB/wIBADAdBgNVHQ4EFgQUppGVg9l805QTJpPF6Agi\nFO8ASFIwHwYDVR0jBBgwFoAUcKWmo+Y10saoMPHtIHqTFQWbYMMwCgYIKoZIzj0E\nAwIDRwAwRAIgboxCiOT+hbLXEwsOyyAkU+4UI/WozNfcKKKncCeYiYcCIDEK1vVN\nkxC9vmL4HL5lNAuls2pRts0YDi27qu/2BOPr\n-----END CERTIFICATE-----\n"
+```
+
 ### Resources
 
+- [Valkey CLI](https://valkey.io/topics/cli/)
+- [Valkey Hash-specific Commands](https://valkey.io/commands/#hash)
 - [Valkey Go Client Library](https://github.com/valkey-io/valkey-go)
 - [Old Caddy storage redis module](https://github.com/gamalan/caddy-tlsredis)
 
