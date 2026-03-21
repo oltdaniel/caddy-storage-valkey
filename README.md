@@ -25,7 +25,7 @@ Caddy storage backend module with the native valkey golang client and caddy, not
 
 ## Example
 
-```
+```caddyfile
 {
     storage valkey {
         address 127.0.0.1:6379
@@ -75,7 +75,7 @@ CADDY_VERSION=latest xcaddy build --with github.com/oltdaniel/caddy-storage-valk
 
 #### Examples
 
-```
+```caddyfile
 # Connecting to single valkey node
 storage valkey {
     # Server specific connection information can be passed in url format or as seperate config options
