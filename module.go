@@ -450,6 +450,11 @@ func (m *StorageValkeyModule) Provision(ctx caddy.Context) error {
 		}
 	}
 
+	// Apply sentinel master set configuration if present
+	if len(m.SentinelMasterSet) > 0 {
+		clientOptions.Sentinel.MasterSet = m.SentinelMasterSet
+	}
+
 	// Create caddy valkey storage specific options
 	options := CaddyStorageValkeyOptions{
 		LockMajority: m.LockMajority,

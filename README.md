@@ -185,11 +185,11 @@ storage valkey {
 # Connecting to valkey sentinels
 storage valkey {
     # See https://github.com/redis/redis-specifications/blob/1252427cdbc497f66a7f8550c6b5f2f35367dc92/uri/redis.txt
-    url valkey://localhost:7001?addr=localhost:7002&addr=localhost:7003
+    url valkey://localhost:26379
 
-    sentinel_master_set my_master
+    sentinel_master_set test
 
-    lock_majority 2
+    lock_majority 1
     disable_client_cache true
 }
 
